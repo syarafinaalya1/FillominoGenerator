@@ -17,42 +17,41 @@ class Board {
 
     private void generateBoard() {// implement board generation
         Random rd = new Random(size);
-        int row, col;
-        int rowNB, colNB;
+        Pair cell;
+        Pair NB;
 
         while (isEmpty(board)) {
+            int row, col;
             row = rd.nextInt();
             col = rd.nextInt();
+            cell = new Pair(row, col, 0); // inisiasi 0
+
             int total = 0;
 
             // jika tidak punya tetangga
-            if (countNB(row, col, board) == 0) {
-                board[row][col] = 1;
+            if (countNB(cell, board) == 0) {
+                cell.value = 1;
+                board[cell.col][cell.row] = cell.value;
             }
 
             // jika punya 1 tetangga
-            else if (countNB(row, col, board) == 1) {
+            else if (countNB(cell, board) == 1) {
 
                 // lakukan pencarian neighbor dan dapatkan posisinya
-                if (board[row - 1][col] > 0) {
-                    rowNB = row - 1;
-                    colNB = col;
-                } else if (board[row + 1][col] > 0) {
-                    rowNB = row + 1;
-                    colNB = col;
-                } else if (board[row][col - 1] > 0) {
-                    rowNB = row;
-                    colNB = col - 1;
+                if (board[cell.row - 1][cell.col] > 0) {
+                    NB = new Pair(cell.row - 1, cell.col, board[cell.row - 1][cell.col]);
+                } else if (board[cell.row + 1][cell.col] > 0) {
+                    NB = new Pair(cell.row + 1, cell.col, board[cell.row + 1][cell.col]);
+                } else if (board[cell.row][cell.col - 1] > 0) {
+                    NB = new Pair(cell.row, cell.col - 1, board[cell.row][cell.col - 1]);
                 } else {
-                    rowNB = row;
-                    colNB = col + 1;
+                    NB = new Pair(cell.row, cell.col + 1, board[cell.row][cell.col + 1]);
                 }
 
-                total = board[rowNB][colNB] + 1;
+                total = NB.value + 1;
 
-                board[rowNB][colNB] = total;
-                board[row][col] = total;
-
+                board[NB.col][NB.row] = total;
+                board[cell.col][cell.row] = total;
             }
 
             // jika tetangga lebih dari 1
@@ -141,18 +140,18 @@ class Board {
 
     }
 
-    private int countNB(int row, int col, int[][] board) {
+    private int countNB(Pair p, int[][] board) {
         // untuk mengecek jika sel mempunyai tetangga atau tidak sekaligus
         // menghitungjika iya, berapa tetangga yang dimilikinya
         int res = 0;
 
-        if (board[row - 1][col] > 0) {
+        if (board[p.row - 1][p.col] > 0) {
             res++;
-        } else if (board[row + 1][col] > 0) {
+        } else if (board[p.row + 1][p.col] > 0) {
             res++;
-        } else if (board[row][col - 1] > 0) {
+        } else if (board[p.row][p.col - 1] > 0) {
             res++;
-        } else if (board[row + 1][col + 1] > 0) {
+        } else if (board[p.row + 1][p.col + 1] > 0) {
             res++;
         }
 
