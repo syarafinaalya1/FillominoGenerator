@@ -55,6 +55,9 @@ class Board {
             }
 
             // jika tetangga lebih dari 1
+            else if (countNB(cell, board) > 1) {
+
+            }
 
         }
     }
@@ -115,11 +118,6 @@ class Board {
     }
 
     // mencari grup neighbor, lalu update semua grup dengan nilai total yang baru
-
-    private boolean haveNB() {
-        boolean res = false;
-        return res;
-    }
 
     private void findNB(int row, int col) {
         // lakukan loop atas, kanan, kiri, bawah, mengembalikan angka petunjuk dimana
