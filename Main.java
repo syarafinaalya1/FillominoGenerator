@@ -7,7 +7,7 @@ class Board {
 
     int size;
     List<ArrayList<Pair>> groups = new ArrayList<>();
-    Boolean[] checkedNB = new Boolean[4];
+    boolean[] checkedNB = new boolean[4];
     int[][] board;
 
     public Board(int size) {
@@ -56,10 +56,77 @@ class Board {
 
             // jika tetangga lebih dari 1
             else if (countNB(cell, board) > 1) {
+                checkedNB = initiateCheckedNB(cell, null);
+
+                // mendapatkan tetangga yang belum di cek
+                int check;
+                boolean direction = true;
+
+                while (direction == true) {
+                    check = rd.nextInt(4);
+
+                    // jika member tersebut belum di check
+                    if (checkedNB[check - 1] == false) {
+                        checkedNB[check - 1] = true;
+                        NB = mapDirection(check, cell);
+                        direction = false;
+                    }
+
+                    else {
+                        check = rd.nextInt(4);
+                    }
+                }
 
             }
 
         }
+    }
+
+    private Pair mapDirection(int index, Pair cell) {
+
+        Pair NB;
+
+        // mapping
+        if (index == 1) {
+            NB = new Pair(cell.row - 1, cell.col, board[cell.row - 1][cell.col]);
+        } else if (index == 2) {
+            NB = new Pair(cell.row + 1, cell.col, board[cell.row + 1][cell.col]);
+        } else if (index == 3) {
+            NB = new Pair(cell.row, cell.col - 1, board[cell.row][cell.col - 1]);
+        } else {
+            NB = new Pair(cell.row, cell.col + 1, board[cell.row][cell.col + 1]);
+        }
+
+        return NB;
+    }
+
+    private boolean[] initiateCheckedNB(Pair cell, boolean[] checkedNB) {
+        for (int i = 0; i < checkedNB.length; i++) {
+            checkedNB[i] = false;
+        }
+
+        return checkedNB;
+    }
+
+    private Pair getRandomNB(Pair cell) {
+
+        Random rd = new Random();
+        Pair NB;
+        int index = rd.nextInt(4);
+
+        // mapping
+        if (index == 1) {
+            NB = new Pair(cell.row - 1, cell.col, board[cell.row - 1][cell.col]);
+        } else if (index == 2) {
+            NB = new Pair(cell.row + 1, cell.col, board[cell.row + 1][cell.col]);
+        } else if (index == 3) {
+            NB = new Pair(cell.row, cell.col - 1, board[cell.row][cell.col - 1]);
+        } else {
+            NB = new Pair(cell.row, cell.col + 1, board[cell.row][cell.col + 1]);
+        }
+
+        return NB;
+
     }
 
     private boolean isEmpty(int[][] board) {
