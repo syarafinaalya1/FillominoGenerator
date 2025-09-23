@@ -18,7 +18,7 @@ class Board {
     private void generateBoard() {// implement board generation
         Random rd = new Random(size);
         Pair cell;
-        Pair NB;
+        Pair NB = new Pair(0, 0, 0);
 
         while (isEmpty(board)) {
             int row, col;
@@ -59,27 +59,76 @@ class Board {
                 checkedNB = initiateCheckedNB(cell, null);
 
                 // mendapatkan tetangga yang belum di cek
-                int check;
+                int check = rd.nextInt(4);
+                ;
                 boolean direction = true;
 
                 while (direction == true) {
-                    check = rd.nextInt(4);
-
                     // jika member tersebut belum di check
                     if (checkedNB[check - 1] == false) {
-                        checkedNB[check - 1] = true;
-                        NB = mapDirection(check, cell);
+                        checkedNB[check - 1] = true; // ubah state nb jadi sudah di cek
+                        NB = mapDirection(check, cell); // dapatkan NB
                         direction = false;
+
+                        // proses nb baru
+
+                        total = NB.value + cell.value;
+
+                        if (total <= 9) {
+                            mergeGroup(NB.row, NB.col, cell.row, cell.col, total, groups);
+
+
+                            while ()// selama masih ada tetangga yang memiliki total.. lalu update untuk checkedNB dibuat setiap dapet NB
+
+                            // buat while untuk melakukan cek jika tetangga memiliki nilai yang sama dengan
+                            // total
+
+                        } else {
+                            // cari nb baru
+                            check = rd.nextInt(4);
+                            direction = true;
+
+                        }
                     }
 
-                    else {
+                    else { // jika tetangga sudah di cek
                         check = rd.nextInt(4);
+                        // dimulai darri cari tetannga baru
+
+                        // dapatkan tetangga baru, lalu checked == true
+
+                        // update total
+
+                        // while masih ada yang sebanyak total ,
+                        // cek jika dia sudah di cek atau nbelum, kalau sudah cari tetangga yang lain
+                        // (while semua belum di cek)
                     }
+
+                    // sudah dapat NB , lalu cek merge
+
                 }
 
             }
 
         }
+    }
+
+    private Boolean haveXNeihbour(Boolean[] checkedNB, Pair cell, int x, int[][] board) {
+        Boolean res = false;
+        Pair NB;
+
+        for (int i = 0; i < checkedNB.length; i++) {
+            if (checkedNB[i] == false) {
+                NB = (mapDirection((i + 1), cell));
+
+                if (NB.value == x) {
+                    res = true; // kalau ada yang isinya sama dengan total
+                }
+            }
+        }
+
+        return res;
+
     }
 
     private Pair mapDirection(int index, Pair cell) {
