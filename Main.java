@@ -58,43 +58,41 @@ class Board {
             else if (countNB(cell, board) > 1) {
                 checkedNB = initiateCheckedNB(cell, null);
 
-                // mendapatkan tetangga yang belum di cek
-                int check = rd.nextInt(4);
+                int check = rd.nextInt(4);// mendapatkan tetangga yang belum di cek
 
                 boolean direction = true;
 
                 while (direction == true) { // direction untuk menyimpan state NB sudah di dapatkan atau belum
                     // jika NB tersebut belum di check
-                    if (checkedNB[check - 1] == false) {
-                        checkedNB[check - 1] = true; // ubah state nb jadi sudah di cek 1.1
-                        NB = mapDirection(check, cell); // dapatkan NB
+                    if (checkedNB[check] == false) {
+                        checkedNB[check] = true; // ubah state nb jadi sudah di cek 1.1
+                        NB = mapDirection(check + 1, cell); // dapatkan NB
                         direction = false;
 
                         // proses nb baru
-
                         total = NB.value + cell.value;
 
                         if (total <= 9) {
                             mergeGroup(NB.row, NB.col, cell.row, cell.col, total, groups);
 
-                            while (haveXNeighbour(checkedNB, cell, total, board) == true) {// selama masih ada tetangga
-                                                                                           // yang memiliki total.. lalu
-                                                                                           // update untuk checkedNB
-                                                                                           // dibuat setiap dapet NB
+                            while (haveXNeighbour(checkedNB, cell, total, board) == true) {// selama masih ada ttg yang
+                                                                                           // memiliki nilai = total..
+                                int arahNB = getNewNB(checkedNB); // mendapatkan koordinat nb baru yang == total
+                                NB = mapDirection(arahNB, cell); // dapatlkan nb baru dari arah yang baru (1-4)
+                                checkedNB[arahNB - 1] = true;// update checked neighbor jadi true (di denormalisasikan
+                                                             // lagi kaarena arah nb 1-4)
 
-                                // iff conditonal jika nb yang di cek belum di cek dapatkan neighbor baru
-                                // iff conditional jika dapat di merge maka merge
-                                // update checked neighbor jadi true
-                                // else ganti satu grup jadi 0
-                                // update checked neighbor jadi true
-                                // cari neihbor lain ((sudah auto jika di while))
+                                if (total + NB.value <= 9) {// iff conditional jika dapat di merge maka merge
+                                    total = total + NB.value; // total diperbaharui
+                                    mergeGroup(NB.row, NB.col, cell.row, cell.col, total, groups); // lalu merge
+                                                                                                   // dilakukan
+                                } else {// else ganti satu grup jadi 0
+                                    deleteGroup(NB, groups, board);
+                                }
 
-                                // eksperiman have neighbor sudah memiliki array yang sudah di update checkednya
-                                // secara berkala dan di update methodnya sehingga dia hanya return true kalau
-                                // dia false
+                                arahNB = getNewNB(checkedNB); // cari neihbor lain ((sudah auto jika di while))
+                                NB = mapDirection(arahNB, cell);
                             }
-                            // buat while untuk melakukan cek jika tetangga memiliki nilai yang sama dengan
-                            // total
 
                         } else {
                             // cari nb baru
@@ -126,7 +124,25 @@ class Board {
         }
     }
 
-    private int getNewNB(Boolean[] checkedNb) {
+    private void deleteGroup(Pair x, List<ArrayList<Pair>> groups, int[][] board) {
+        ArrayList<Pair> targetGroup = null;
+
+        for (ArrayList<Pair> group : groups) {
+            if (group.contains(x)) { // dapatkan grup dengan x
+                for (Pair p : group) {
+
+                    p.value = 0; // ubah value dari pair
+
+                    board[p.row][p.col] = 0; // update board
+                }
+                break; // selesai, keluar loop groups
+            }
+        }
+
+        groups.remove(targetGroup);
+    }
+
+    private int getNewNB(Boolean[] checkedNb) { // return angka yang di normalisasi (1-4)
         Random rd = new Random();
         int count = 0;
 
@@ -136,19 +152,17 @@ class Board {
                 count++;
         }
 
-        if (count == 0)
+        if (count == 0) {
             return -1; // return jika semua sudah di cek
-
-        int target = rd.nextInt(count);
-        for (int i = 0; i < checkedNb.length; i++) {
-            if (!checkedNb[i]) {
-                if (target == 0)
-                    return i + 1; // return jika ada yang false & belum di cek
-                target--;
-            }
         }
 
-        return -1; // fallback (harusnya tidak pernah sampai sini)
+        int nb;
+
+        do {
+            nb = rd.nextInt(checkedNb.length) + 1; // 1-4.
+        } while (checkedNb[nb - 1]); // di sesuaikan hingga 0-3
+
+        return nb; // hasil tetap 1..length
     }
 
     private Boolean haveXNeighbour(Boolean[] checkedNB, Pair cell, int x, int[][] board) {
