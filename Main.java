@@ -7,7 +7,7 @@ class Board {
 
     int size;
     List<ArrayList<Pair>> groups = new ArrayList<>();
-    boolean[] checkedNB = new boolean[4];
+    Boolean[] checkedNB = new Boolean[4];
     int[][] board;
 
     public Board(int size) {
@@ -60,13 +60,13 @@ class Board {
 
                 // mendapatkan tetangga yang belum di cek
                 int check = rd.nextInt(4);
-                ;
+
                 boolean direction = true;
 
-                while (direction == true) {
-                    // jika member tersebut belum di check
+                while (direction == true) { // direction untuk menyimpan state NB sudah di dapatkan atau belum
+                    // jika NB tersebut belum di check
                     if (checkedNB[check - 1] == false) {
-                        checkedNB[check - 1] = true; // ubah state nb jadi sudah di cek
+                        checkedNB[check - 1] = true; // ubah state nb jadi sudah di cek 1.1
                         NB = mapDirection(check, cell); // dapatkan NB
                         direction = false;
 
@@ -77,9 +77,22 @@ class Board {
                         if (total <= 9) {
                             mergeGroup(NB.row, NB.col, cell.row, cell.col, total, groups);
 
+                            while (haveXNeighbour(checkedNB, cell, total, board) == true) {// selama masih ada tetangga
+                                                                                           // yang memiliki total.. lalu
+                                                                                           // update untuk checkedNB
+                                                                                           // dibuat setiap dapet NB
 
-                            while ()// selama masih ada tetangga yang memiliki total.. lalu update untuk checkedNB dibuat setiap dapet NB
+                                // iff conditonal jika nb yang di cek belum di cek dapatkan neighbor baru
+                                // iff conditional jika dapat di merge maka merge
+                                // update checked neighbor jadi true
+                                // else ganti satu grup jadi 0
+                                // update checked neighbor jadi true
+                                // cari neihbor lain ((sudah auto jika di while))
 
+                                // eksperiman have neighbor sudah memiliki array yang sudah di update checkednya
+                                // secara berkala dan di update methodnya sehingga dia hanya return true kalau
+                                // dia false
+                            }
                             // buat while untuk melakukan cek jika tetangga memiliki nilai yang sama dengan
                             // total
 
@@ -113,7 +126,32 @@ class Board {
         }
     }
 
-    private Boolean haveXNeihbour(Boolean[] checkedNB, Pair cell, int x, int[][] board) {
+    private int getNewNB(Boolean[] checkedNb) {
+        Random rd = new Random();
+        int count = 0;
+
+        // menghitung berapa yang belum dicek
+        for (boolean b : checkedNb) {
+            if (!b)
+                count++;
+        }
+
+        if (count == 0)
+            return -1; // return jika semua sudah di cek
+
+        int target = rd.nextInt(count);
+        for (int i = 0; i < checkedNb.length; i++) {
+            if (!checkedNb[i]) {
+                if (target == 0)
+                    return i + 1; // return jika ada yang false & belum di cek
+                target--;
+            }
+        }
+
+        return -1; // fallback (harusnya tidak pernah sampai sini)
+    }
+
+    private Boolean haveXNeighbour(Boolean[] checkedNB, Pair cell, int x, int[][] board) {
         Boolean res = false;
         Pair NB;
 
@@ -149,7 +187,7 @@ class Board {
         return NB;
     }
 
-    private boolean[] initiateCheckedNB(Pair cell, boolean[] checkedNB) {
+    private Boolean[] initiateCheckedNB(Pair cell, Boolean[] checkedNB) {
         for (int i = 0; i < checkedNB.length; i++) {
             checkedNB[i] = false;
         }
