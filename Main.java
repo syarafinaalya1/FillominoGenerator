@@ -1,4 +1,6 @@
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Scanner;
 import java.util.Random;
@@ -7,7 +9,7 @@ class Board {
 
     int size;
     List<ArrayList<Pair>> groups = new ArrayList<>();
-    Boolean[] checkedNB = new Boolean[4];
+
     int[][] board;
 
     public Board(int size) {
@@ -15,23 +17,30 @@ class Board {
         this.board = new int[size][size];
     }
 
-    private void generateBoard() {// implement board generation
-        Random rd = new Random(size);
+    public int[][] generateBoard() {// implement board generation
+        Random rd = new Random();
         Pair cell;
         Pair NB = new Pair(0, 0, 0);
+        Boolean[] checkedNB = new Boolean[4];
+        int idx = 0;
+
+        List<Pair> notChecked = new ArrayList<>();
+        // initiate notchecked dengan isi masing masing 0
 
         while (isEmpty(board)) {
-            int row, col;
-            row = rd.nextInt();
-            col = rd.nextInt();
-            cell = new Pair(row, col, 0); // inisiasi 0
+
+            cell = notChecked.get(idx); // inisiasi 0
 
             int total = 0;
 
             // jika tidak punya tetangga
             if (countNB(cell, board) == 0) {
                 cell.value = 1;
-                board[cell.col][cell.row] = cell.value;
+                board[cell.row][cell.col] = cell.value;
+
+                ArrayList<Pair> newGroup = new ArrayList<>(); // tambahkan ke dalam grup
+                newGroup.add(new Pair(cell.row, cell.col, cell.value));
+                groups.add(newGroup);
             }
 
             // jika punya 1 tetangga
@@ -50,8 +59,25 @@ class Board {
 
                 total = NB.value + 1;
 
-                board[NB.col][NB.row] = total;
-                board[cell.col][cell.row] = total;
+                // update group baru dengan tetangga
+                if (total <= 9) {
+                    board[NB.row][NB.col] = total; // isi dengan total jika masih masuk
+                    board[cell.row][cell.col] = total;
+
+                    mergeGroup(NB.row, NB.col, cell.row, cell.col, total, groups);
+
+                    // remove tetangga dan grupnya dari list !!
+
+                } else {
+                    board[cell.col][cell.row] = 1; // isi dengan 1
+
+                    ArrayList<Pair> newGroup = new ArrayList<>();
+                    newGroup.add(new Pair(cell.row, cell.col, 1));
+                    groups.add(newGroup);
+                }
+
+                notChecked.remove(idx);
+
             }
 
             // jika tetangga lebih dari 1
@@ -72,8 +98,10 @@ class Board {
                         // proses nb baru
                         total = NB.value + cell.value;
 
-                        if (total <= 9) {
+                        if (total <= 9) { // jika dengan tetangga bisa di merge
                             mergeGroup(NB.row, NB.col, cell.row, cell.col, total, groups);
+
+                            // remove tetangga !!
 
                             while (haveXNeighbour(checkedNB, cell, total, board) == true) {// selama masih ada ttg yang
                                                                                            // memiliki nilai = total..
@@ -86,18 +114,42 @@ class Board {
                                     total = total + NB.value; // total diperbaharui
                                     mergeGroup(NB.row, NB.col, cell.row, cell.col, total, groups); // lalu merge
                                                                                                    // dilakukan
+
+                                    // remove tetangga !!
+
                                 } else {// else ganti satu grup jadi 0
                                     deleteGroup(NB, groups, board);
+
+                                    // // tambahkan lagi tetangga ke belum di cek !! atau engga karena ga diremove
                                 }
 
                                 arahNB = getNewNB(checkedNB); // cari neihbor lain ((sudah auto jika di while))
                                 NB = mapDirection(arahNB, cell);
                             }
 
-                        } else {
+                        } else { // jika dengan tetangga tidak bisa di merge
+
                             // cari nb baru
                             check = rd.nextInt(4);
-                            direction = true;
+                            boolean semuaSudahDicek = true;
+
+                            for (boolean b : checkedNB) {
+                                if (!b) {
+                                    semuaSudahDicek = false;
+                                    break;
+                                }
+                            }
+
+                            if (semuaSudahDicek) { // else if jika semua tetangga sudah dicoba, keluar dari loop
+
+                                direction = false; // pemberhentian loop
+
+                                board[cell.row][cell.col] = 1; // isi dengan satu masuk case pertama
+
+                                // remove cell!!
+                            }
+
+                            // else lakukan ulang
 
                         }
                     }
@@ -122,6 +174,15 @@ class Board {
             }
 
         }
+        return board;
+
+    }
+
+    private List shuffleOrder(List<Pair> order) {
+
+        Collections.shuffle(order);
+
+        return order;
     }
 
     private void deleteGroup(Pair x, List<ArrayList<Pair>> groups, int[][] board) {
@@ -135,6 +196,7 @@ class Board {
 
                     board[p.row][p.col] = 0; // update board
                 }
+                targetGroup = group;
                 break; // selesai, keluar loop groups
             }
         }
@@ -183,6 +245,16 @@ class Board {
 
     }
 
+    private int[][] makeBoard(List<ArrayList<Pair>> groups, int[][] board) {
+        for (List<Pair> group : groups) { // loop setiap group
+            for (Pair p : group) { // loop setiap Pair dalam group
+                board[p.row][p.col] = p.value; // letakkan ke board
+            }
+        }
+
+        return board;
+    }
+
     private Pair mapDirection(int index, Pair cell) {
 
         Pair NB;
@@ -191,11 +263,11 @@ class Board {
         if (index == 1) {
             NB = new Pair(cell.row - 1, cell.col, board[cell.row - 1][cell.col]);
         } else if (index == 2) {
-            NB = new Pair(cell.row + 1, cell.col, board[cell.row + 1][cell.col]);
-        } else if (index == 3) {
             NB = new Pair(cell.row, cell.col - 1, board[cell.row][cell.col - 1]);
-        } else {
+        } else if (index == 3) {
             NB = new Pair(cell.row, cell.col + 1, board[cell.row][cell.col + 1]);
+        } else {
+            NB = new Pair(cell.row + 1, cell.col, board[cell.row + 1][cell.col]);
         }
 
         return NB;
@@ -233,11 +305,11 @@ class Board {
     private boolean isEmpty(int[][] board) {
         boolean res = false;
         int i = 0;
-        int j = 0;
 
-        while (res == false && i <= board.length) {
-            while (res == false && j <= board.length) {
-                if (board[i][j] > 0) {
+        while (res == false && i < board.length) {
+            int j = 0;
+            while (res == false && j < board.length) {
+                if (board[i][j] == 0) { // jika board masih belum terisi penuh
                     res = true;
                     break;
                 } else {
@@ -251,59 +323,37 @@ class Board {
     }
 
     private void mergeGroup(int row, int col, int rowNB, int colNB, int total, List<ArrayList<Pair>> groups) {
-        // implement merging logic
+        int idx1 = -1, idx2 = -1;
 
-        int NBidx = -1;
-
+        // cari index grup pertama (row,col) dan grup kedua (rowNB,colNB)
         for (int i = 0; i < groups.size(); i++) {
             for (Pair p : groups.get(i)) {
+                if (p.row == row && p.col == col) {
+                    idx1 = i;
+                }
                 if (p.row == rowNB && p.col == colNB) {
-                    NBidx = i;
-                    break;
+                    idx2 = i;
                 }
             }
-            if (NBidx != -1)
+            // jika sudah ketemu keduanya, hentikan loop
+            if (idx1 != -1 && idx2 != -1)
                 break;
         }
 
-        if (NBidx == -1) {
-            System.out.println("No group contains (" + rowNB + "," + colNB + ")");
-            return;
-        }
+        // ambil grup
+        ArrayList<Pair> group1 = groups.get(idx1);
+        ArrayList<Pair> group2 = groups.get(idx2);
 
-        ArrayList<Pair> NBGroup = groups.get(NBidx);
+        // gabungkan semua anggota group2 ke group1
+        group1.addAll(group2);
 
-        // add row1,col1 into the group if not exists
-        Pair newPair = new Pair(row, col, total);
-        if (!NBGroup.contains(newPair)) {
-            NBGroup.add(newPair);
-        }
-
-        // update all members in the group with new total
-        for (Pair p : NBGroup) {
+        // update nilai semua anggota di group1 dengan total
+        for (Pair p : group1) {
             p.value = total;
         }
-    }
 
-    // mencari grup neighbor, lalu update semua grup dengan nilai total yang baru
-
-    private void findNB(int row, int col) {
-        // lakukan loop atas, kanan, kiri, bawah, mengembalikan angka petunjuk dimana
-        // tetangga itu berada
-        Random rd = new Random(4);
-
-        // random neighbor, lalu cek jika dia sudah di cek atau belum
-
-        int rowNB = rd.nextInt(board.length);
-        int colNB = rd.nextInt(board.length);
-
-        if (rowNB == row || colNB == col) {
-            while (rowNB == row || colNB == col) {
-                rowNB = rd.nextInt(board.length);
-                colNB = rd.nextInt(board.length);
-            }
-        }
-
+        // hapus group2
+        groups.remove(idx2);
     }
 
     private int countNB(Pair p, int[][] board) {
@@ -311,13 +361,24 @@ class Board {
         // menghitungjika iya, berapa tetangga yang dimilikinya
         int res = 0;
 
+        if (p.row > 0 && board[p.row - 1][p.col] > 0)
+            res++;
+        if (p.row < board.length - 1 && board[p.row + 1][p.col] > 0)
+            res++;
+        if (p.col > 0 && board[p.row][p.col - 1] > 0)
+            res++;
+        if (p.col < board[0].length - 1 && board[p.row][p.col + 1] > 0)
+            res++;
         if (board[p.row - 1][p.col] > 0) {
             res++;
-        } else if (board[p.row + 1][p.col] > 0) {
+        }
+        if (board[p.row + 1][p.col] > 0) {
             res++;
-        } else if (board[p.row][p.col - 1] > 0) {
+        }
+        if (board[p.row][p.col - 1] > 0) {
             res++;
-        } else if (board[p.row + 1][p.col + 1] > 0) {
+        }
+        if (board[p.row][p.col + 1] > 0) {
             res++;
         }
 
@@ -327,8 +388,24 @@ class Board {
 
 public class Main {
     public static void main(String[] args) {
-        Scanner sc = new Scanner(System.in);
-        Board b = new Board(5);
-        sc.close();
+        Scanner sn = new Scanner(System.in);
+
+        int size = sn.nextInt();
+        int[][] papan = new int[size][size];
+
+        Board b = new Board(size);
+        papan = b.generateBoard();
+
+        printBoard(papan);
+
+    }
+
+    static void printBoard(int[][] board) {
+        for (int i = 0; i < board.length; i++) {
+            for (int j = 0; j < board.length; j++) {
+                System.out.print(board[i][j] + " ");
+            }
+            System.out.println();
+        }
     }
 }

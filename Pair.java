@@ -1,3 +1,5 @@
+import java.util.Objects;
+
 public class Pair {
     int row, col;
     int value;
@@ -35,6 +37,21 @@ public class Pair {
     @Override
     public String toString() {
         return "(" + row + "," + col + ")=" + value;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null || getClass() != obj.getClass())
+            return false;
+        Pair other = (Pair) obj;
+        return this.row == other.row && this.col == other.col;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(row, col);
     }
 
 }
