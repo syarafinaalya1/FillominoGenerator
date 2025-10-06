@@ -54,15 +54,16 @@ class Board {
 
             // jika punya 1 tetangga
             else if (countNB(cell, board) == 1) {
+                NB = null;
 
                 // lakukan pencarian neighbor dan dapatkan posisinya
                 if (cell.row > 0 && board[cell.row - 1][cell.col] > 0)
                     NB = new Pair(cell.row - 1, cell.col, board[cell.row - 1][cell.col]);
-                if (cell.row < size - 1 && board[cell.row + 1][cell.col] > 0)
+                else if (cell.row < size - 1 && board[cell.row + 1][cell.col] > 0)
                     NB = new Pair(cell.row + 1, cell.col, board[cell.row + 1][cell.col]);
-                if (cell.col > 0 && board[cell.row][cell.col - 1] > 0)
+                else if (cell.col > 0 && board[cell.row][cell.col - 1] > 0)
                     NB = new Pair(cell.row, cell.col - 1, board[cell.row][cell.col - 1]);
-                if (cell.col < size - 1 && board[cell.row][cell.col + 1] > 0) {
+                else if (cell.col < size - 1 && board[cell.row][cell.col + 1] > 0) {
                     NB = new Pair(cell.row, cell.col + 1, board[cell.row][cell.col + 1]);
                 } else {
                     NB = new Pair(-1, -1, 0);
@@ -79,6 +80,8 @@ class Board {
                     // hapus semua pair dalam grup hasil merge dari notChecked
                     notChecked = removeFromNotChecked(cell, groups, notChecked);
 
+                    board = updateBoard(groups, NB);
+
                     // remove tetangga dan grupnya dari list !!
 
                 } else {
@@ -94,7 +97,7 @@ class Board {
 
             // jika tetangga lebih dari 1
             else if (countNB(cell, board) > 1) {
-                checkedNB = initiateCheckedNB(cell, null);
+                checkedNB = initiateCheckedNB(cell, checkedNB);
 
                 int check = rd.nextInt(4);// mendapatkan tetangga yang belum di cek (0-3)
 
@@ -115,6 +118,8 @@ class Board {
                             // remove tetangga !!
                             notChecked = removeFromNotChecked(cell, groups, notChecked);
 
+                            board = updateBoard(groups, NB);
+
                             while (haveXNeighbour(checkedNB, cell, total, board) == true) {// selama masih ada ttg yang
                                                                                            // memiliki nilai = total..
                                 int arahNB = getNewNB(checkedNB, total, cell) + 1; // mendapatkan koordinat nb baru yang
@@ -134,6 +139,7 @@ class Board {
 
                                     // remove tetangga !!
                                     notChecked = removeFromNotChecked(cell, groups, notChecked);
+                                    board = updateBoard(groups, NB);
 
                                 } else {// else ganti satu grup jadi 0
                                     deleteGroup(NB, groups, board);
@@ -152,7 +158,8 @@ class Board {
 
                                 }
 
-                                arahNB = getNewNB(checkedNB); // cari neihbor lain ((sudah auto jika di while))
+                                arahNB = getNewNB(checkedNB, total, cell); // cari neihbor lain ((sudah auto jika di
+                                                                           // while))
                                 NB = mapDirection(arahNB, cell);
 
                             }
@@ -212,23 +219,41 @@ class Board {
 
     }
 
+    private int[][] updateBoard(List<ArrayList<Pair>> groups, Pair NB) {
+        // cari index group tetangga (nb) setelah merge untuk sinkronisasi board
+        int updatedIdx = -1;
+        for (int i = 0; i < groups.size(); i++) {
+            for (Pair p : groups.get(i)) {
+                if (p.row == NB.row && p.col == NB.col) {
+                    updatedIdx = i;
+                    break;
+                }
+            }
+            if (updatedIdx != -1)
+                break;
+        }
+
+        // sinkronisasi board dengan group yang baru diupdate
+        if (updatedIdx != -1) {
+            for (Pair p : groups.get(updatedIdx)) {
+                board[p.row][p.col] = p.value;
+            }
+        }
+
+        return board;
+
+    }
+
     private List<Pair> removeFromNotChecked(Pair target, List<ArrayList<Pair>> groups, List<Pair> notChecked) {
-        // cari grup yang mengandung pair target
         for (ArrayList<Pair> group : groups) {
             for (Pair p : group) {
                 if (p.row == target.row && p.col == target.col) {
-                    // cari index di notChecked secara manual
-                    for (int i = 0; i < notChecked.size(); i++) {
-                        Pair np = notChecked.get(i);
-                        if (np.row == target.row && np.col == target.col) {
-                            notChecked.remove(i); // hapus berdasarkan index
-                            return notChecked; // kembalikan list yang sudah diupdate
-                        }
-                    }
+                    notChecked.removeIf(np -> group.stream().anyMatch(gp -> gp.row == np.row && gp.col == np.col));
+                    return notChecked;
                 }
             }
         }
-        return notChecked; // kalau tidak ditemukan tetap kembalikan list asli
+        return notChecked;
     }
 
     private List shuffleOrder(List<Pair> order) {
@@ -337,6 +362,20 @@ class Board {
             checkedNB[i] = false;
         }
 
+        int r = cell.row;
+        int c = cell.col;
+        int size = board.length;
+
+        // tandai arah yang out of bound sebagai sudah dicek
+        if (r == 0)
+            checkedNB[0] = true; // up tidak ada
+        if (c == 0)
+            checkedNB[1] = true; // left tidak ada
+        if (c == size - 1)
+            checkedNB[2] = true; // right tidak ada
+        if (r == size - 1)
+            checkedNB[3] = true; // down tidak ada
+
         return checkedNB;
     }
 
@@ -386,38 +425,43 @@ class Board {
 
         int idx1 = -1, idx2 = -1;
 
-        // cari index grup pertama (row,col) dan grup kedua (rowNB,colNB)
+        // cari index grup untuk cell (row,col) dan neighbor (rowNB,colNB)
         for (int i = 0; i < groups.size(); i++) {
             for (Pair p : groups.get(i)) {
-                if (p.row == row && p.col == col) {
+                if (p.row == row && p.col == col)
                     idx1 = i;
-                }
-                if (p.row == rowNB && p.col == colNB) {
+                if (p.row == rowNB && p.col == colNB)
                     idx2 = i;
-                }
             }
-            // jika sudah ketemu keduanya, hentikan loop
             if (idx1 != -1 && idx2 != -1)
                 break;
         }
 
-        // ambil grup
-        ArrayList<Pair> group1 = groups.get(idx1);
-        ArrayList<Pair> group2 = groups.get(idx2);
+        // jika hanya salah satu yang punya grup
+        if (idx1 != -1 && idx2 == -1) {
+            groups.get(idx1).add(new Pair(rowNB, colNB, total));
+            for (Pair p : groups.get(idx1))
+                p.value = total;
+            return groups;
 
-        // gabungkan semua anggota group2 ke group1
-        group1.addAll(group2);
-
-        // update nilai semua anggota di group1 dengan total
-        for (Pair p : group1) {
-            p.value = total;
-
-            // update board di posisi row,col milik pair
-            board[p.row][p.col] = p.value;
+        } else if (idx1 == -1 && idx2 != -1) {
+            groups.get(idx2).add(new Pair(row, col, total));
+            for (Pair p : groups.get(idx2))
+                p.value = total;
+            return groups;
         }
 
-        // hapus group2
-        groups.remove(idx2);
+        // jika dua-duanya punya grup, gabungkan ke grup tetangga (idx2)
+        if (idx1 != -1 && idx2 != -1 && idx1 != idx2) {
+            ArrayList<Pair> group1 = groups.get(idx1);
+            ArrayList<Pair> group2 = groups.get(idx2);
+
+            group2.addAll(group1);
+            for (Pair p : group2)
+                p.value = total;
+
+            groups.remove(idx1);
+        }
 
         return groups;
     }
@@ -435,18 +479,6 @@ class Board {
             res++;
         if (p.col < board[0].length - 1 && board[p.row][p.col + 1] > 0)
             res++;
-        if (board[p.row - 1][p.col] > 0) {
-            res++;
-        }
-        if (board[p.row + 1][p.col] > 0) {
-            res++;
-        }
-        if (board[p.row][p.col - 1] > 0) {
-            res++;
-        }
-        if (board[p.row][p.col + 1] > 0) {
-            res++;
-        }
 
         return res;
     }
@@ -456,10 +488,12 @@ public class Main {
     public static void main(String[] args) {
         Scanner sn = new Scanner(System.in);
 
+        System.out.println("Masukkan ukuran board:");
         int size = sn.nextInt();
         int[][] papan = new int[size][size];
 
         Board b = new Board(size);
+
         papan = b.generateBoard();
 
         printBoard(papan);
