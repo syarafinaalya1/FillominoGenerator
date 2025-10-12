@@ -75,12 +75,14 @@ class Board {
                 // CASE 1.1 : 1 tetanga & bisa merge
                 if (total <= 9) { // belum update cell | harunya new group cell board
 
-                    groups = mergeGroup(NB.row, NB.col, cell.row, cell.col, total, groups); // udah update board, new
-                                                                                            // group
-                    notChecked = removeFromNotChecked(cell, groups, notChecked);// tambahkan fungsi remove grup dan
-                                                                                // semua yang trgabung dari notCheck
-                    board = updateBoard(groups, NB);
+                    // 1. Merge Group
+                    groups = mergeGroup(NB.row, NB.col, cell.row, cell.col, total, groups);
 
+                    // 2. Remove Tetangga dari List
+                    notChecked = removeFromNotChecked(cell, groups, notChecked);
+
+                    // 3. Update board dari grup baru
+                    board = updateBoard(groups, NB);
                 }
                 // CASE 1.2 : 1 tetanga & tidak bisa merge
                 else {
@@ -103,6 +105,13 @@ class Board {
                 checkedNB = initiateCheckedNB(cell, checkedNB); // disini akan menfalse kan semua, sekaligus men-true
                                                                 // kan yang out of bound agar tidak di cek
 
+                cell.value = 1;
+                board[cell.row][cell.col] = 1; // isi dengan 1
+
+                ArrayList<Pair> newCell = new ArrayList<>(); // inisiasi grup baru dengan isi 1
+                newCell.add(new Pair(cell.row, cell.col, 1));
+                groups.add(newCell);
+
                 while (direction == true) {
 
                     // CASE 3.1 : Multi tetangga & !checked
@@ -110,8 +119,8 @@ class Board {
 
                         checkedNB[arah] = true; // ubah state nb jadi sudah di cek
                         NB = mapDirection(arah, cell); // dapatkan NB
-
-                        total = NB.value + cell.value; // proses nb baru
+                        total = NB.value + board[cell.row][cell.col];
+                        ; // proses nb baru
 
                         if (total <= 9) { // CASE 3.1.1 Multi tetangga & !checked & Merge
 
@@ -123,6 +132,8 @@ class Board {
 
                             // 3. Update board dari grup baru
                             board = updateBoard(groups, NB);
+
+                            cell.value = board[cell.row][cell.col];
 
                             while (haveXNeighbour(checkedNB, cell, total, board)) {
 
@@ -143,9 +154,15 @@ class Board {
                                 // 5️⃣ Jika bisa digabung
                                 if (total + NB.value <= 9) {
                                     total = total + NB.value;
+
+                                    // 1. Merge Group
                                     groups = mergeGroup(NB.row, NB.col, cell.row, cell.col, total, groups);
-                                    board = updateBoard(groups, NB);
+
+                                    // 2. Remove Tetangga dari List
                                     notChecked = removeFromNotChecked(cell, groups, notChecked);
+
+                                    // 3. Update board dari grup baru
+                                    board = updateBoard(groups, NB);
                                 }
                                 // 6️⃣ Jika tidak bisa digabung
                                 else {
@@ -216,33 +233,7 @@ class Board {
 
                     // CASE 3.2 : Multi tetangga & checked
                     else {
-                        arah = rd.nextInt(4);
-
-                        // 1. Cek dahulu jika semua sudah di cek
-                        boolean semuaSudahDicek = true;
-                        for (boolean b : checkedNB) {
-                            if (!b) {
-                                semuaSudahDicek = false;
-                                break;
-                            }
-                        }
-
-                        // 2. Jika semua sudah di cek, loop berhenti. cell sudah beres.
-                        // CASE 3.2.1 Multi tetangga & checked & finish
-                        if (semuaSudahDicek) {
-                            direction = false; // pemberhentian loop, sudah tidak memiliki arah
-                            board[cell.row][cell.col] = 1;
-                            idx = notChecked.indexOf(cell);
-
-                            ArrayList<Pair> newGroup = new ArrayList<>(); // tambahkan ke dalam grup
-                            newGroup.add(new Pair(cell.row, cell.col, cell.value));
-                            groups.add(newGroup);
-                        }
-
-                        // CASE 3.2.1 Multi tetangga & !checked & !finish
-                        else { // cari NB baru
-                            arah = rd.nextInt(4);
-                        }
+                        break;
                     }
 
                 }
@@ -291,7 +282,7 @@ class Board {
         return notChecked;
     }
 
-    private List shuffleOrder(List<Pair> order) {
+    private List<Pair> shuffleOrder(List<Pair> order) {
 
         Collections.shuffle(order);
 
@@ -385,16 +376,6 @@ class Board {
 
     }
 
-    private int[][] makeBoard(List<ArrayList<Pair>> groups, int[][] board) {
-        for (List<Pair> group : groups) { // loop setiap group
-            for (Pair p : group) { // loop setiap Pair dalam group
-                board[p.row][p.col] = p.value; // letakkan ke board
-            }
-        }
-
-        return board;
-    }
-
     private Pair mapDirection(int index, Pair cell) { // index: 0=up,1=left,2=right,3=down
         int r = cell.row;
         int c = cell.col;
@@ -435,12 +416,6 @@ class Board {
             checkedNB[3] = true; // down tidak ada
 
         return checkedNB;
-    }
-
-    private Pair getRandomNB(Pair cell) {
-        Random rd = new Random();
-        int index = rd.nextInt(4); // 0..3
-        return mapDirection(index, cell);
     }
 
     private boolean notFull(List<Pair> notChecked) {
