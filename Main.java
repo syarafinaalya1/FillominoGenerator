@@ -1,5 +1,4 @@
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Scanner;
@@ -23,11 +22,15 @@ class Board {
         Pair cell;
         Pair NB;
         int idx = 0;
+        boolean idt = false;
 
-        Boolean[] checkedNB = new Boolean[4];
+        boolean[] checkedNB = new boolean[4];
+        // Boolean[][] pending = new Boolean[board.length][board.length];
         List<Pair> notChecked = new ArrayList<>();
+        List<Pair> order = new ArrayList<>();
+        List<Pair> inPending = new ArrayList<>();
 
-        // initiate notchecked dengan isi masing masing 0
+        // initiate notchecked
         for (int r = 0; r < size; r++) {
             for (int c = 0; c < size; c++) {
                 notChecked.add(new Pair(r, c, 0));
@@ -35,187 +38,543 @@ class Board {
         }
         notChecked = shuffleOrder(notChecked);
 
-        while (haveEmpty(notChecked)) {
+        // for (int row = 0; row < pending.length; row++) {
+        // for (int col = 0; col < pending.length; col++) {
+        // pending[row][col] = false;
+        // }
+        // }
+        while (idt == false) {
+            while (haveEmpty(notChecked)) {
 
-            cell = notChecked.remove(idx); // mengambil index ke 0, langsung remove karena case ini sudah pasti terjadi
-                                           // dan tidak akan dibatalkan
-            int total = 0;
+                cell = notChecked.remove(idx);// mengambil index ke 0, langsung remove karena case ini sudah pasti
+                                              // terjadi
+                                              // dan tidak akan dibatalkan
+                int total = 0;
 
-            // CASE 1 : jika tidak punya tetangga
-            if (countNB(cell, board) == 0) {
+                // CASE 1 : jika tidak punya tetangga
+                if (countNB(cell, board) == 0) {
 
-                System.out.println("0 tetangga");
+                    System.out.println("0 tetangga");
 
-                cell.value = 1;
-                board[cell.row][cell.col] = cell.value;
+                    cell.value = 1;
+                    board[cell.row][cell.col] = cell.value;
 
-                ArrayList<Pair> newGroup = new ArrayList<>(); // tambahkan ke dalam grup
-                newGroup.add(new Pair(cell.row, cell.col, cell.value));
-                groups.add(newGroup);
-
-                printBoard(board);
-            }
-
-            // CASE 2 : 1 tetangga
-            else if (countNB(cell, board) == 1) {
-                System.out.println("1 tetangga");
-                cell.value = 1;
-                NB = null;
-
-                // 1. dapatkan Letak tetangga (dengan handling inbound)
-                if (cell.row > 0 && board[cell.row - 1][cell.col] > 0)
-                    NB = new Pair(cell.row - 1, cell.col, board[cell.row - 1][cell.col]);
-                else if (cell.row < size - 1 && board[cell.row + 1][cell.col] > 0)
-                    NB = new Pair(cell.row + 1, cell.col, board[cell.row + 1][cell.col]);
-                else if (cell.col > 0 && board[cell.row][cell.col - 1] > 0)
-                    NB = new Pair(cell.row, cell.col - 1, board[cell.row][cell.col - 1]);
-                else if (cell.col < size - 1 && board[cell.row][cell.col + 1] > 0) {
-                    NB = new Pair(cell.row, cell.col + 1, board[cell.row][cell.col + 1]);
-                } else {
-                    NB = new Pair(-1, -1, 0);
-                }
-
-                total = NB.value + cell.value; // ditambah 1 karena ini iterasi pertama jadi pasti ditambah 1 (sel
-                                               // berisi 1)
-
-                // 2. update group baru dengan tetangga
-
-                // CASE 1.1 : 1 tetanga & bisa merge
-                if (total <= 9 && canMerge(NB, total, board, groups)) { // belum update cell | harunya new group cell
-                                                                        // board
-
-                    // cek dulu jika bisa merge setelah digrup
-
-                    // 1. merge Group
-                    groups = mergeGroup(NB, cell, total, groups);
-
-                    // 2. remove Tetangga dari List
-                    notChecked = removeFromNotChecked(cell, groups, notChecked);
-
-                    // 3. Update board dari grup baru
-                    board = updateBoard(groups, NB);
-
-                    printBoard(board);
-                }
-                // CASE 1.2 : 1 tetanga & tidak bisa merge
-                else {
-
-                    board[cell.row][cell.col] = 1; // isi dengan 1
-
-                    ArrayList<Pair> newGroup = new ArrayList<>(); // inisiasi grup baru dengan isi 1
-                    newGroup.add(new Pair(cell.row, cell.col, 1));
+                    ArrayList<Pair> newGroup = new ArrayList<>(); // tambahkan ke dalam grup
+                    newGroup.add(new Pair(cell.row, cell.col, cell.value));
                     groups.add(newGroup);
 
                     printBoard(board);
                 }
-            }
 
-            // CASE 3 : Multiple Tetangga
-            else if (countNB(cell, board) > 1) {
+                // CASE 2 : 1 tetangga
+                else if (countNB(cell, board) == 1) {
+                    System.out.println("1 tetangga");
+                    cell.value = 1;
+                    NB = null;
 
-                System.out.println("Multi Tetangga");
+                    // 1. dapatkan Letak tetangga (dengan handling inbound)
+                    if (cell.row > 0 && board[cell.row - 1][cell.col] > 0)
+                        NB = new Pair(cell.row - 1, cell.col, board[cell.row - 1][cell.col]);
+                    else if (cell.row < size - 1 && board[cell.row + 1][cell.col] > 0)
+                        NB = new Pair(cell.row + 1, cell.col, board[cell.row + 1][cell.col]);
+                    else if (cell.col > 0 && board[cell.row][cell.col - 1] > 0)
+                        NB = new Pair(cell.row, cell.col - 1, board[cell.row][cell.col - 1]);
+                    else if (cell.col < size - 1 && board[cell.row][cell.col + 1] > 0) {
+                        NB = new Pair(cell.row, cell.col + 1, board[cell.row][cell.col + 1]);
+                    } else {
+                        NB = new Pair(-1, -1, 0);
+                    }
 
-                int arah = rd.nextInt(4);// mendapatkan tetangga yang belum di cek (0-3)
-                boolean direction = true; // menyimpan arah, jika sudah di cek ini akan berhenti sel tidak akan di cek
-                                          // lagi
+                    total = NB.value + cell.value; // sudah di update tambah 1
 
-                checkedNB = initiateCheckedNB(cell, checkedNB); // disini akan menfalse kan semua, sekaligus men-true
-                                                                // kan yang out of bound agar tidak di cek
+                    // 2. update group baru dengan tetangga
 
-                cell.value = 1;
-                board[cell.row][cell.col] = 1; // isi dengan 1
+                    // CASE 1.1 : 1 tetanga & bisa merge
+                    if (total <= 9 && canMerge(NB, total, board, groups)) { // belum update cell | harunya new group
+                                                                            // cell
+                                                                            // board
+                        // cek dulu jika bisa merge setelah digrup
 
-                ArrayList<Pair> newCell = new ArrayList<>(); // inisiasi grup baru dengan isi 1
-                newCell.add(new Pair(cell.row, cell.col, 1));
-                groups.add(newCell);
+                        groups = mergeGroup(NB, cell, total, groups);
+                        notChecked = removeFromNotChecked(cell, groups, notChecked);
+                        board = updateBoard(groups, NB);
 
-                printBoard(board);
+                        printBoard(board);
+                    }
+                    // CASE 1.2 : 1 tetanga & tidak bisa merge
+                    else {
 
-                while (direction == true) {
+                        board[cell.row][cell.col] = 1; // isi dengan 1
 
-                    // CASE 3.1 : Multi tetangga & !checked
-                    if (checkedNB[arah] == false) {
+                        ArrayList<Pair> newGroup = new ArrayList<>(); // inisiasi grup baru dengan isi 1
+                        newGroup.add(new Pair(cell.row, cell.col, 1));
+                        groups.add(newGroup);
+                        printBoard(board);
+                    }
+                }
 
-                        checkedNB[arah] = true; // ubah state nb jadi sudah di cek
-                        NB = mapDirection(arah, cell); // dapatkan NB
-                        total = NB.value + cell.value;
-                        // proses nb baru
+                // CASE 3 : Multiple Tetangga
+                else if (countNB(cell, board) > 1) {
 
-                        if (total <= 9 && canMerge(NB, total, board, groups)) { // CASE 3.1.1 Multi tetangga & !checked
-                                                                                // & Merge
+                    System.out.println("Multi Tetangga : " + cell.col + " " + cell.row);
+                    int arah = rd.nextInt(4);// mendapatkan tetangga yang belum di cek (0-3)
+                    boolean direction = true; // menyimpan arah, jika sudah di cek ini akan berhenti sel tidak akan di
+                                              // cek
+                                              // lagi
+                    checkedNB = initiateCheckedNB(cell, checkedNB); // disini akan menfalse kan semua, sekaligus
+                                                                    // men-true
+                                                                    // kan yang out of bound agar tidak di cek
+                    cell.value = 1;
 
-                            // 1. Merge Group
-                            groups = mergeGroup(NB, cell, total, groups);
+                    ArrayList<Pair> newCell = new ArrayList<>(); // inisiasi grup baru dengan isi 1
+                    newCell.add(new Pair(cell.row, cell.col, 1));
+                    groups.add(newCell);
 
-                            // 2. Remove Tetangga dari List
-                            notChecked = removeFromNotChecked(cell, groups, notChecked);
+                    while (direction == true) {
 
-                            // 3. Update board dari grup baru
-                            board = updateBoard(groups, NB);
+                        // CASE 3.1 : Multi tetangga & !checked
+                        if (checkedNB[arah] == false) {
 
-                            cell.value = board[cell.row][cell.col];
+                            checkedNB[arah] = true; // ubah state nb jadi sudah di cek
+                            NB = mapDirection(arah, cell); // dapatkan NB
+                            total = NB.value + cell.value;
 
-                            printBoard(board);
+                            // proses nb baru
+                            if (total <= 9 && canMerge(NB, total, board, groups)) { // CASE 3.1.1 Multi tetangga &
+                                                                                    // !checked
+                                                                                    // & Merge
 
-                            while (haveXNeighbour(checkedNB, cell, total, board)) {
+                                if (haveXNeighbour(checkedNB, cell, total, board)) { // jika ada neighbor yang mnemiliki
+                                                                                     // nilai baru (total diisi dengan
+                                                                                     // nilai
+                                                                                     // baru bukan nilai neighbor)
+                                                                                     // backtracking
 
-                                // 1 Ambil arah neighbor yang punya nilai sama dengan total
-                                int arahNB = getNewNB(checkedNB, total, cell);
+                                    if (inPending.indexOf(cell) != -1) { // belum pernah di pending
+                                        notChecked.add(cell);
+                                        inPending.add(cell);
+                                        cell.value = 0;
 
-                                // 2️ Jika tidak ada neighbor valid, hentikan loop
-                                if (arahNB == -1) {
-                                    break;
-                                }
+                                        int index = getGroupIdx(cell, groups);
+                                        groups.remove(index);
+                                        break;
+                                    } else {
 
-                                // 3️ Dapatkan koordinat neighbor dari arah tersebut
-                                NB = mapDirection(arahNB, cell);
+                                        boolean semuaSudahDicek = true;
 
-                                // 4️ Tandai arah ini sudah dicek
-                                checkedNB[arahNB] = true;
-
-                                // 5️ Jika bisa digabung
-                                if ((total + NB.value <= 9) && canMerge(NB, total, board, groups)) {
-                                    total = total + NB.value;
-
-                                    // 1. Merge Group
-                                    groups = mergeGroup(NB, cell, total, groups);
-
-                                    // 2. Remove Tetangga dari List
-                                    notChecked = removeFromNotChecked(cell, groups, notChecked);
-
-                                    // 3. Update board dari grup baru
-                                    board = updateBoard(groups, NB);
-                                    cell.value = total;
-
-                                    printBoard(board);
-                                }
-                                // 6️ Jika tidak bisa digabung
-                                else {
-                                    int indx = getGroupIdx(NB, groups);
-                                    ArrayList<Pair> removedGroup = groups.get(indx);
-
-                                    groups = deleteGroup(NB, groups, board);
-
-                                    if (removedGroup != null) {
-                                        for (int i = 0; i < removedGroup.size(); i++) {
-                                            Pair p = removedGroup.get(i);
-                                            board[p.row][p.col] = 0;
-                                            notChecked.add(p);
+                                        for (boolean b : checkedNB) {
+                                            if (b == false) {
+                                                semuaSudahDicek = false;
+                                                break;
+                                            }
                                         }
-                                        notChecked = shuffleOrder(notChecked);
+
+                                        if (semuaSudahDicek == true) {
+                                            if (haveXNeighbour(checkedNB, cell, 1, board)) {
+
+                                                NB = mapDirection(getNB(cell, 1, board), cell);
+
+                                                if (canMerge(NB, 2, board, groups)) {
+
+                                                    groups = mergeGroup(NB, cell, total, groups);
+                                                    notChecked = removeFromNotChecked(cell, groups, notChecked);
+                                                    board = updateBoard(groups, NB);
+                                                    board[cell.col][cell.row] = 2; // pemastian ulang
+                                                    cell.value = board[cell.row][cell.col];
+
+                                                } else {
+
+                                                    Pair targetNB = NB;
+                                                    int gidx = getGroupIdx(targetNB, groups);
+                                                    int nbIndex = order.indexOf(targetNB);
+
+                                                    while (!canMerge(NB, 2, board, groups)) {
+
+                                                        if (nbIndex == -1) {
+                                                            order.add(0, NB);
+                                                            nbIndex = 0;
+
+                                                            if (gidx != -1) {
+
+                                                                ArrayList<Pair> grp = groups.get(gidx);
+
+                                                                for (int i = 0; i < grp.size(); i++) {
+
+                                                                    Pair p = grp.get(i);
+
+                                                                    board[p.row][p.col] = 0;
+                                                                    if (!notChecked.contains(p)) {
+                                                                        notChecked.add(p);
+
+                                                                    }
+
+                                                                    if (order.indexOf(p) != -1) {
+                                                                        order.remove(order.indexOf(order));
+                                                                    }
+                                                                }
+
+                                                                notChecked = shuffleOrder(notChecked);
+                                                                groups.remove(gidx);
+                                                            }
+                                                            break;
+                                                        }
+
+                                                        // ============= CASE: order sudah menyentuh NB
+                                                        // ======================
+                                                        if (order.size() - 1 <= nbIndex) {
+
+                                                            ArrayList<Pair> grp = groups
+                                                                    .get(getGroupIdx(targetNB, groups));
+                                                            notChecked.add(targetNB);
+                                                            order.remove(nbIndex);
+
+                                                            for (int i = 0; i < grp.size(); i++) {
+                                                                Pair p = grp.get(i);
+                                                                p.value = 0;
+
+                                                                board[p.row][p.col] = 0;
+                                                                if (!notChecked.contains(p)) {
+                                                                    notChecked.add(p);
+                                                                }
+
+                                                                if (order.indexOf(p) != -1) {
+                                                                    order.remove(order.indexOf(p));
+                                                                }
+                                                            }
+
+                                                            notChecked = shuffleOrder(notChecked);
+                                                            groups.remove(nbIndex);
+
+                                                            cell.value = 1;
+                                                            board[cell.row][cell.col] = cell.value;
+
+                                                            ArrayList<Pair> newGroup = new ArrayList<>(); // tambahkan
+                                                                                                          // ke dalam
+                                                                                                          // grup
+                                                            newGroup.add(new Pair(cell.row, cell.col, cell.value));
+                                                            groups.add(newGroup);
+
+                                                            break;
+                                                        }
+
+                                                        // ======================= BACKTRACK NORMAL
+                                                        // ===========================
+
+                                                        Pair back = order.get(order.size() - 1);
+                                                        board[back.row][back.col] = 0;
+
+                                                        int gBidx = getGroupIdx(back, groups);
+
+                                                        if (gBidx != -1) {
+
+                                                            // kosongin grup, tambahin ke notcheck,remover order, remove
+                                                            // board
+                                                            List<Pair> grp = groups.get(gidx);
+                                                            for (int i = 0; i < grp.size(); i++) {
+
+                                                                Pair p = grp.get(i);
+                                                                p.value = 0;
+
+                                                                board[p.row][p.col] = 0;
+                                                                if (!notChecked.contains(p)) {
+                                                                    notChecked.add(p);
+                                                                }
+
+                                                                if (order.indexOf(p) != -1) {
+                                                                    order.remove(order.indexOf(p));
+                                                                }
+                                                            }
+
+                                                            groups.remove(gidx);
+                                                        }
+
+                                                        if (!notChecked.contains(back)) {
+                                                            notChecked.add(back);
+                                                            notChecked = shuffleOrder(notChecked);
+                                                        }
+                                                        if (order.indexOf(back) != -1) {
+                                                            order.remove(order.indexOf(back));
+                                                        }
+
+                                                        // ============== CEK APAKAH SUDAH ADA TETANGGA VALID
+                                                        // =============
+                                                        int nbCheck = hasValidNeighbourForMerge(cell, board, groups);
+                                                        if (nbCheck > 0) {
+
+                                                            Pair p = mapDirection(nbCheck, cell);
+
+                                                            groups = mergeGroup(p, cell, total, groups);
+                                                            notChecked = removeFromNotChecked(cell, groups, notChecked);
+                                                            board = updateBoard(groups, p);
+                                                            cell.value = board[cell.row][cell.col];
+
+                                                            break;
+                                                        } // else if gapunya tetangga 1
+                                                        else if ((haveXNeighbour(checkedNB, cell, 1, board)) == false) {
+                                                            cell.value = 1;
+                                                            board[cell.row][cell.col] = cell.value;
+
+                                                            ArrayList<Pair> g = new ArrayList<>(); // inisiasi grup
+                                                                                                   // baru dengan isi
+                                                                                                   // 1
+                                                            g.add(new Pair(cell.row, cell.col, 1));
+                                                            groups.add(g);
+
+                                                            break;
+
+                                                        } else if (canMerge(NB, 2, board, groups)) {
+                                                            NB = mapDirection(getNB(cell, 1, board), cell);
+
+                                                            groups = mergeGroup(NB, cell, total, groups);
+                                                            notChecked = removeFromNotChecked(cell, groups, notChecked);
+                                                            board = updateBoard(groups, cell);
+                                                            cell.value = board[cell.row][cell.col];
+
+                                                            break;
+                                                        }
+
+                                                    }
+                                                }
+
+                                            } else {
+
+                                                // ================ BUAT GRUP BARU DENGAN REUSE PAIR
+                                                // ====================
+                                                cell.value = 1;
+                                                board[cell.row][cell.col] = 1;
+
+                                                ArrayList<Pair> newGroup = new ArrayList<>();
+                                                newGroup.add(cell); // ⬅️ tidak membuat Pair baru
+                                                groups.add(newGroup);
+                                            }
+                                        }
+
                                     }
 
+                                } else {
+
+                                    groups = mergeGroup(NB, cell, total, groups);
+                                    notChecked = removeFromNotChecked(cell, groups, notChecked);
+                                    board = updateBoard(groups, NB);
+
+                                    cell.value = board[cell.row][cell.col];
+
+                                    direction = false;
                                     printBoard(board);
+
                                 }
+
                             }
 
-                        } else { // CASE 3.1.2 Multi tetangga & !checked & !Merge
+                            else { // CASE 3.1.2 Multi tetangga & !checked & !Merge
 
+                                // 1. cek dahulu jika semua sudah di cek
+                                boolean semuaSudahDicek = true;
+
+                                for (boolean b : checkedNB) {
+                                    if (b == false) {
+                                        semuaSudahDicek = false;
+                                        break;
+                                    }
+                                }
+
+                                // 2. jika semua sudah di cek, loop berhenti. cell sudah beres..
+
+                                // CASE 3.1.2.1 Multi tetangga & !checked & !Merge & Finish
+                                // CASE 3.1.2.1 Multi tetangga & !checked & !Merge & Finish
+
+                                if (semuaSudahDicek == true) {
+                                    if (haveXNeighbour(checkedNB, cell, 1, board)) {
+
+                                        NB = mapDirection(getNB(cell, 1, board), cell);
+
+                                        if (canMerge(NB, 2, board, groups)) {
+
+                                            groups = mergeGroup(NB, cell, total, groups);
+                                            notChecked = removeFromNotChecked(cell, groups, notChecked);
+                                            board = updateBoard(groups, NB);
+                                            board[cell.col][cell.row] = 2; // pemastian ulang
+                                            cell.value = board[cell.row][cell.col];
+
+                                        } else {
+
+                                            Pair targetNB = NB;
+                                            int gidx = getGroupIdx(targetNB, groups);
+                                            int nbIndex = order.indexOf(targetNB);
+
+                                            while (!canMerge(NB, 2, board, groups)) {
+
+                                                if (nbIndex == -1) {
+                                                    order.add(0, NB);
+                                                    nbIndex = 0;
+
+                                                    if (gidx != -1) {
+
+                                                        ArrayList<Pair> grp = groups.get(gidx);
+
+                                                        for (int i = 0; i < grp.size(); i++) {
+
+                                                            Pair p = grp.get(i);
+
+                                                            board[p.row][p.col] = 0;
+                                                            if (!notChecked.contains(p)) {
+                                                                notChecked.add(p);
+
+                                                            }
+
+                                                            if (order.indexOf(p) != -1) {
+                                                                order.remove(order.indexOf(order));
+                                                            }
+                                                        }
+
+                                                        notChecked = shuffleOrder(notChecked);
+                                                        groups.remove(gidx);
+                                                    }
+                                                    break;
+                                                }
+
+                                                // ============= CASE: order sudah menyentuh NB
+                                                // ======================
+                                                if (order.size() - 1 <= nbIndex) {
+
+                                                    ArrayList<Pair> grp = groups
+                                                            .get(getGroupIdx(targetNB, groups));
+                                                    notChecked.add(targetNB);
+                                                    order.remove(nbIndex);
+
+                                                    for (int i = 0; i < grp.size(); i++) {
+                                                        Pair p = grp.get(i);
+                                                        p.value = 0;
+
+                                                        board[p.row][p.col] = 0;
+                                                        if (!notChecked.contains(p)) {
+                                                            notChecked.add(p);
+                                                        }
+
+                                                        if (order.indexOf(p) != -1) {
+                                                            order.remove(order.indexOf(p));
+                                                        }
+                                                    }
+
+                                                    notChecked = shuffleOrder(notChecked);
+                                                    groups.remove(nbIndex);
+
+                                                    cell.value = 1;
+                                                    board[cell.row][cell.col] = cell.value;
+
+                                                    ArrayList<Pair> newGroup = new ArrayList<>(); // tambahkan
+                                                                                                  // ke dalam
+                                                                                                  // grup
+                                                    newGroup.add(new Pair(cell.row, cell.col, cell.value));
+                                                    groups.add(newGroup);
+
+                                                    break;
+                                                }
+
+                                                // ======================= BACKTRACK NORMAL
+                                                // ===========================
+
+                                                Pair back = order.get(order.size() - 1);
+                                                board[back.row][back.col] = 0;
+
+                                                int gBidx = getGroupIdx(back, groups);
+
+                                                if (gBidx != -1) {
+
+                                                    // kosongin grup, tambahin ke notcheck,remover order, remove
+                                                    // board
+                                                    List<Pair> grp = groups.get(gidx);
+                                                    for (int i = 0; i < grp.size(); i++) {
+
+                                                        Pair p = grp.get(i);
+                                                        p.value = 0;
+
+                                                        board[p.row][p.col] = 0;
+                                                        if (!notChecked.contains(p)) {
+                                                            notChecked.add(p);
+                                                        }
+
+                                                        if (order.indexOf(p) != -1) {
+                                                            order.remove(order.indexOf(p));
+                                                        }
+                                                    }
+
+                                                    groups.remove(gidx);
+                                                }
+
+                                                if (!notChecked.contains(back)) {
+                                                    notChecked.add(back);
+                                                    notChecked = shuffleOrder(notChecked);
+                                                }
+                                                if (order.indexOf(back) != -1) {
+                                                    order.remove(order.indexOf(back));
+                                                }
+
+                                                // ============== CEK APAKAH SUDAH ADA TETANGGA VALID
+                                                // =============
+                                                int nbCheck = hasValidNeighbourForMerge(cell, board, groups);
+                                                if (nbCheck > 0) {
+
+                                                    Pair p = mapDirection(nbCheck, cell);
+
+                                                    groups = mergeGroup(p, cell, total, groups);
+                                                    notChecked = removeFromNotChecked(cell, groups, notChecked);
+                                                    board = updateBoard(groups, p);
+                                                    cell.value = board[cell.row][cell.col];
+
+                                                    break;
+                                                } // else if gapunya tetangga 1
+                                                else if ((haveXNeighbour(checkedNB, cell, 1, board)) == false) {
+                                                    cell.value = 1;
+                                                    board[cell.row][cell.col] = cell.value;
+
+                                                    ArrayList<Pair> g = new ArrayList<>(); // inisiasi grup
+                                                                                           // baru dengan isi
+                                                                                           // 1
+                                                    g.add(new Pair(cell.row, cell.col, 1));
+                                                    groups.add(g);
+
+                                                    break;
+
+                                                } else if (canMerge(NB, 2, board, groups)) {
+                                                    NB = mapDirection(getNB(cell, 1, board), cell);
+
+                                                    groups = mergeGroup(NB, cell, total, groups);
+                                                    notChecked = removeFromNotChecked(cell, groups, notChecked);
+                                                    board = updateBoard(groups, cell);
+                                                    cell.value = board[cell.row][cell.col];
+
+                                                    break;
+                                                }
+
+                                            }
+                                        }
+
+                                    } else {
+
+                                        // ================ BUAT GRUP BARU DENGAN REUSE PAIR ====================
+                                        cell.value = 1;
+                                        board[cell.row][cell.col] = 1;
+
+                                        ArrayList<Pair> newGroup = new ArrayList<>();
+                                        newGroup.add(cell); // ⬅️ tidak membuat Pair baru
+                                        groups.add(newGroup);
+                                    }
+                                }
+
+                                // CASE 3.1.2.1 Multi tetangga & !checked & !Merge & !Finish
+                                else { // cari NB baru
+                                    arah = rd.nextInt(4);
+                                }
+                            }
+                        }
+
+                        // CASE 3.2 : Multi tetangga & checked
+                        else {
                             // 1. Cek dahulu jika semua sudah di cek
                             boolean semuaSudahDicek = true;
-
                             for (boolean b : checkedNB) {
-                                if (b == false) {
+                                if (!b) {
                                     semuaSudahDicek = false;
                                     break;
                                 }
@@ -224,21 +583,182 @@ class Board {
                             // 2. Jika semua sudah di cek, loop berhenti. cell sudah beres.
                             // CASE 3.1.2.1 Multi tetangga & !checked & !Merge & Finish
                             if (semuaSudahDicek == true) {
+                                if (haveXNeighbour(checkedNB, cell, 1, board)) {
 
-                                direction = false; // pemberhentian loop, sudah tidak memiliki arah
-                                if (cell.value == 0) {
+                                    NB = mapDirection(getNB(cell, 1, board), cell);
+
+                                    if (canMerge(NB, 2, board, groups)) {
+
+                                        groups = mergeGroup(NB, cell, total, groups);
+                                        notChecked = removeFromNotChecked(cell, groups, notChecked);
+                                        board = updateBoard(groups, NB);
+                                        board[cell.col][cell.row] = 2; // pemastian ulang
+                                        cell.value = board[cell.row][cell.col];
+
+                                    } else {
+
+                                        Pair targetNB = NB;
+                                        int gidx = getGroupIdx(targetNB, groups);
+                                        int nbIndex = order.indexOf(targetNB);
+
+                                        while (!canMerge(NB, 2, board, groups)) {
+
+                                            if (nbIndex == -1) {
+                                                order.add(0, NB);
+                                                nbIndex = 0;
+
+                                                if (gidx != -1) {
+
+                                                    ArrayList<Pair> grp = groups.get(gidx);
+
+                                                    for (int i = 0; i < grp.size(); i++) {
+
+                                                        Pair p = grp.get(i);
+
+                                                        board[p.row][p.col] = 0;
+                                                        if (!notChecked.contains(p)) {
+                                                            notChecked.add(p);
+
+                                                        }
+
+                                                        if (order.indexOf(p) != -1) {
+                                                            order.remove(order.indexOf(order));
+                                                        }
+                                                    }
+
+                                                    notChecked = shuffleOrder(notChecked);
+                                                    groups.remove(gidx);
+                                                }
+                                                break;
+                                            }
+
+                                            // ============= CASE: order sudah menyentuh NB
+                                            // ======================
+                                            if (order.size() - 1 <= nbIndex) {
+
+                                                ArrayList<Pair> grp = groups
+                                                        .get(getGroupIdx(targetNB, groups));
+                                                notChecked.add(targetNB);
+                                                order.remove(nbIndex);
+
+                                                for (int i = 0; i < grp.size(); i++) {
+                                                    Pair p = grp.get(i);
+                                                    p.value = 0;
+
+                                                    board[p.row][p.col] = 0;
+                                                    if (!notChecked.contains(p)) {
+                                                        notChecked.add(p);
+                                                    }
+
+                                                    if (order.indexOf(p) != -1) {
+                                                        order.remove(order.indexOf(p));
+                                                    }
+                                                }
+
+                                                notChecked = shuffleOrder(notChecked);
+                                                groups.remove(nbIndex);
+
+                                                cell.value = 1;
+                                                board[cell.row][cell.col] = cell.value;
+
+                                                ArrayList<Pair> newGroup = new ArrayList<>(); // tambahkan
+                                                                                              // ke dalam
+                                                                                              // grup
+                                                newGroup.add(new Pair(cell.row, cell.col, cell.value));
+                                                groups.add(newGroup);
+
+                                                break;
+                                            }
+
+                                            // ======================= BACKTRACK NORMAL
+                                            // ===========================
+
+                                            Pair back = order.get(order.size() - 1);
+                                            board[back.row][back.col] = 0;
+
+                                            int gBidx = getGroupIdx(back, groups);
+
+                                            if (gBidx != -1) {
+
+                                                // kosongin grup, tambahin ke notcheck,remover order, remove
+                                                // board
+                                                List<Pair> grp = groups.get(gidx);
+                                                for (int i = 0; i < grp.size(); i++) {
+
+                                                    Pair p = grp.get(i);
+                                                    p.value = 0;
+
+                                                    board[p.row][p.col] = 0;
+                                                    if (!notChecked.contains(p)) {
+                                                        notChecked.add(p);
+                                                    }
+
+                                                    if (order.indexOf(p) != -1) {
+                                                        order.remove(order.indexOf(p));
+                                                    }
+                                                }
+
+                                                groups.remove(gidx);
+                                            }
+
+                                            if (!notChecked.contains(back)) {
+                                                notChecked.add(back);
+                                                notChecked = shuffleOrder(notChecked);
+                                            }
+                                            if (order.indexOf(back) != -1) {
+                                                order.remove(order.indexOf(back));
+                                            }
+
+                                            // ============== CEK APAKAH SUDAH ADA TETANGGA VALID
+                                            // =============
+                                            int nbCheck = hasValidNeighbourForMerge(cell, board, groups);
+                                            if (nbCheck > 0) {
+
+                                                Pair p = mapDirection(nbCheck, cell);
+
+                                                groups = mergeGroup(p, cell, total, groups);
+                                                notChecked = removeFromNotChecked(cell, groups, notChecked);
+                                                board = updateBoard(groups, p);
+                                                cell.value = board[cell.row][cell.col];
+
+                                                break;
+                                            } // else if gapunya tetangga 1
+                                            else if ((haveXNeighbour(checkedNB, cell, 1, board)) == false) {
+                                                cell.value = 1;
+                                                board[cell.row][cell.col] = cell.value;
+
+                                                ArrayList<Pair> g = new ArrayList<>(); // inisiasi grup
+                                                                                       // baru dengan isi
+                                                                                       // 1
+                                                g.add(new Pair(cell.row, cell.col, 1));
+                                                groups.add(g);
+
+                                                break;
+
+                                            } else if (canMerge(NB, 2, board, groups)) {
+                                                NB = mapDirection(getNB(cell, 1, board), cell);
+
+                                                groups = mergeGroup(NB, cell, total, groups);
+                                                notChecked = removeFromNotChecked(cell, groups, notChecked);
+                                                board = updateBoard(groups, cell);
+                                                cell.value = board[cell.row][cell.col];
+
+                                                break;
+                                            }
+
+                                        }
+                                    }
+
+                                } else {
+
+                                    // ================ BUAT GRUP BARU DENGAN REUSE PAIR ====================
                                     cell.value = 1;
                                     board[cell.row][cell.col] = 1;
+
+                                    ArrayList<Pair> newGroup = new ArrayList<>();
+                                    newGroup.add(cell); // ⬅️ tidak membuat Pair baru
+                                    groups.add(newGroup);
                                 }
-
-                                ArrayList<Pair> newGroup = new ArrayList<>(); // tambahkan ke dalam grup
-                                newGroup.add(new Pair(cell.row, cell.col, cell.value));
-                                groups.add(newGroup);
-
-                                printBoard(board);
-
-                                total = 1;
-
                             }
 
                             // CASE 3.1.2.1 Multi tetangga & !checked & !Merge & !Finish
@@ -246,53 +766,117 @@ class Board {
                                 arah = rd.nextInt(4);
                             }
                         }
-                        direction = false;
-                    }
 
-                    // CASE 3.2 : Multi tetangga & checked
-                    else {
-                        // 1. Cek dahulu jika semua sudah di cek
-                        boolean semuaSudahDicek = true;
-                        for (boolean b : checkedNB) {
-                            if (!b) {
-                                semuaSudahDicek = false;
-                                break;
-                            }
-                        }
-
-                        // 2. Jika semua sudah di cek, loop berhenti. cell sudah beres.
-                        // CASE 3.1.2.1 Multi tetangga & !checked & !Merge & Finish
-                        if (semuaSudahDicek) {
-
-                            direction = false; // pemberhentian loop, sudah tidak memiliki arah
-                            if (cell.value == 0) {
-                                cell.value = 1;
-                                board[cell.row][cell.col] = 1;
-                            }
-
-                            ArrayList<Pair> newGroup = new ArrayList<>(); // tambahkan ke dalam grup
-                            newGroup.add(new Pair(cell.row, cell.col, cell.value));
-                            groups.add(newGroup);
-
-                            printBoard(board);
-
-                            total = 1;
-                        }
-
-                        // CASE 3.1.2.1 Multi tetangga & !checked & !Merge & !Finish
-                        else { // cari NB baru
-                            arah = rd.nextInt(4);
-                        }
                     }
 
                 }
 
+                if (notChecked.contains(cell) == false) {
+                    order.add(cell);
+                }
+
+            }
+            notChecked.clear();
+            for (
+
+                    int i = 0; i < board.length; i++) {
+                for (int j = 0; j < board.length; j++) {
+                    if (board[i][j] == 0) {
+                        Pair x = new Pair(i, j, 0);
+                        if (!notChecked.contains(x)) {
+                            notChecked.add(x);
+
+                        }
+                    }
+                }
             }
 
+            if (notChecked.isEmpty()) {
+                idt = true;
+            }
         }
+
         return board;
 
     }
+
+    private int hasValidNeighbourForMerge(Pair cell, int[][] board, List<ArrayList<Pair>> groups) {
+        int res = -1;
+
+        for (int i = 0; i < 4; i++) {
+
+            Pair nb = mapDirection(i, cell);
+
+            if (nb.value > 0) {
+                int total = nb.value + cell.value;
+
+                if (total <= 9 && canMerge(cell, total, board, groups)) {
+                    res = i;
+                    return res;
+                }
+            }
+
+        }
+        return res;
+
+    }
+
+    private int getNB(Pair cell, int x, int[][] board) {
+        int n = board.length;
+
+        if (cell.row > 0 && board[cell.row - 1][cell.col] == x)
+            return 0;
+        if (cell.col > 0 && board[cell.row][cell.col - 1] == x)
+            return 1;
+        if (cell.col < n - 1 && board[cell.row][cell.col + 1] == x)
+            return 2;
+        if (cell.row < n - 1 && board[cell.row + 1][cell.col] == x)
+            return 3;
+
+        return 0;
+    }
+
+    // private boolean[] initiateCheckedNBSpecial(boolean[] checkedNB, Pair cell) {
+
+    // for (int i = 0; i < checkedNB.length; i++) {
+    // checkedNB[i] = true;
+    // }
+
+    // int r = cell.row;
+    // int c = cell.col;
+    // int size = board.length;
+
+    // // tandai arah yang out of bound sebagai sudah dicek
+    // if (r == 0)
+    // checkedNB[0] = true; // up tidak ada
+    // if (c == 0)
+    // checkedNB[1] = true; // left tidak ada
+    // if (c == size - 1)
+    // checkedNB[2] = true; // right tidak ada
+    // if (r == size - 1)
+    // checkedNB[3] = true; // down tidak ada
+
+    // // tandai NB yang ada value
+    // if (cell.row > 0 && board[cell.row - 1][cell.col] > 0)
+    // checkedNB[0] = false;
+    // if (cell.row < board.length - 1 && board[cell.row + 1][cell.col] > 0)
+    // checkedNB[3] = false;
+    // if (cell.col > 0 && board[cell.row][cell.col - 1] > 0)
+    // checkedNB[1] = false;
+    // if (cell.col < board[0].length - 1 && board[cell.row][cell.col + 1] > 0)
+    // checkedNB[2] = false;
+
+    // if (cell.row > 0 && board[cell.row - 1][cell.col] == 9)
+    // checkedNB[0] = true;
+    // if (cell.row < size - 1 && board[cell.row + 1][cell.col] == 9)
+    // checkedNB[3] = true;
+    // if (cell.col > 0 && board[cell.row][cell.col - 1] == 9)
+    // checkedNB[1] = true;
+    // if (cell.col < size - 1 && board[cell.row][cell.col + 1] == 9)
+    // checkedNB[2] = true;
+
+    // return checkedNB;
+    // }
 
     private boolean canMerge(Pair cell, int total, int[][] board, List<ArrayList<Pair>> groups) {
         // cari grup tempat cell berada
@@ -396,42 +980,8 @@ class Board {
         return order;
     }
 
-    private List<ArrayList<Pair>> deleteGroup(Pair x, List<ArrayList<Pair>> groups, int[][] board) {
-        for (int i = 0; i < groups.size(); i++) {
-            ArrayList<Pair> group = groups.get(i);
-            for (int j = 0; j < group.size(); j++) {
-                Pair p = group.get(j);
-                if (p.row == x.row && p.col == x.col) {
-                    groups.remove(i);
-                    return groups;
-                }
-            }
-        }
-        return groups;
-    }
-
-    private int getNewNB(Boolean[] checkedNb, int total, Pair cell) {
-        int n = board.length;
-        List<Integer> candidates = new ArrayList<>();
-
-        int[][] dirs = { { -1, 0 }, { 0, -1 }, { 0, 1 }, { 1, 0 } }; // atas, kiri, kanan, bawah
-
-        for (int i = 0; i < 4; i++) {
-            if (checkedNb[i])
-                continue;
-
-            int nr = cell.row + dirs[i][0];
-            int nc = cell.col + dirs[i][1];
-
-            if (nr >= 0 && nr < n && nc >= 0 && nc < n && board[nr][nc] == total)
-                candidates.add(i);
-        }
-
-        return candidates.isEmpty() ? -1 : candidates.get((int) (Math.random() * candidates.size()));
-    }
-
-    private Boolean haveXNeighbour(Boolean[] checkedNB, Pair cell, int x, int[][] board) {
-        Boolean res = false;
+    private boolean haveXNeighbour(boolean[] checkedNB, Pair cell, int x, int[][] board) {
+        boolean res = false;
         Pair NB;
 
         for (int i = 0; i < checkedNB.length; i++) {
@@ -466,7 +1016,7 @@ class Board {
         return new Pair(r, c, board[r][c]);
     }
 
-    private Boolean[] initiateCheckedNB(Pair cell, Boolean[] checkedNB) {
+    private boolean[] initiateCheckedNB(Pair cell, boolean[] checkedNB) {
         for (int i = 0; i < checkedNB.length; i++) {
             checkedNB[i] = true;
         }
@@ -485,12 +1035,12 @@ class Board {
         if (r == size - 1)
             checkedNB[3] = true; // down tidak ada
 
-        // tandai NB yang tidak ada value
-        if (cell.row > 0 && board[cell.row - 1][cell.col] > 0) // idx 0
+        // tandai NB yang ada value
+        if (cell.row > 0 && board[cell.row - 1][cell.col] > 0) // kalo row lebih dari 0 dan dia memiliki tetangga ats
             checkedNB[0] = false;
-        if (cell.row < board.length - 1 && board[cell.row + 1][cell.col] > 0)
+        if (cell.row < board.length - 1 && board[cell.row + 1][cell.col] > 0) // kalau row punya bawah
             checkedNB[3] = false;
-        if (cell.col > 0 && board[cell.row][cell.col - 1] > 0)
+        if (cell.col > 0 && board[cell.row][cell.col - 1] > 0) // kalau col punya kiri
             checkedNB[1] = false;
         if (cell.col < board[0].length - 1 && board[cell.row][cell.col + 1] > 0)
             checkedNB[2] = false;
@@ -556,42 +1106,36 @@ class Board {
         return res;
     }
 
-    public int[][] simplePruning() {
-        Random rd = new Random();
-        boolean selesai = false;
+    public int[][] pruneBoard(int[][] board) {
+        Random random = new Random();
 
-        while (!selesai) {
-            // cek apakah semua grup ukurannya <= 2
-            boolean semuaKecil = true;
-            for (ArrayList<Pair> group : groups) {
-                if (group.size() > 2) {
-                    semuaKecil = false;
-                    break;
-                }
+        // inisiasi board kosong
+        for (int i = 0; i < board.length; i++) {
+            for (int j = 0; j < board[i].length; j++) {
+                board[i][j] = 0;
             }
-
-            if (semuaKecil) {
-                selesai = true; // hentikan loop
-                continue;
-            }
-
-            // pilih grup secara acak
-            int gIdx = rd.nextInt(groups.size());
-            ArrayList<Pair> group = groups.get(gIdx);
-
-            // kalau grup sisa 1, lewati
-            if (group.size() <= 1)
-                continue;
-
-            // pilih anggota acak
-            int pIdx = rd.nextInt(group.size());
-            Pair target = group.get(pIdx);
-
-            // hapus dari board dan grup
-            board[target.row][target.col] = 0;
-            group.remove(pIdx);
         }
 
+        Collections.shuffle(groups);
+
+        for (int i = 0; i < groups.size(); i++) {
+            List<Pair> group = groups.get(i);
+            Collections.shuffle(group);
+
+            int sisa = random.nextBoolean() ? 1 : 2;
+
+            while (group.size() > sisa) {
+                group.remove(group.size() - 1);
+            }
+        }
+
+        for (int i = 0; i < groups.size(); i++) {
+            List<Pair> group = groups.get(i);
+            for (int j = 0; j < group.size(); j++) {
+                Pair cell = group.get(j);
+                board[cell.row][cell.col] = cell.value;
+            }
+        }
         return board;
     }
 
@@ -608,9 +1152,9 @@ public class Main {
         Board b = new Board(size);
 
         papan = b.generateBoard();
-        papan = b.simplePruning();
 
         printBoard(papan);
+        sn.close();
 
     }
 
