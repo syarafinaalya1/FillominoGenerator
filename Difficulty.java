@@ -8,7 +8,7 @@ public class Difficulty {
         this.board = new int[this.size][this.size];
     }
 
-    private double getScore() {
+    public double getScore() {
         double scoreTotal;
 
         if (this.board.length == 4) {
@@ -21,7 +21,7 @@ public class Difficulty {
         return scoreTotal;
     }
 
-    private double scoreK1(int[][] board) {
+    public double scoreK1(int[][] board) {
         double res;
         double invalidCnt = 0;
         double potentialCnt = 0;
@@ -56,7 +56,7 @@ public class Difficulty {
         return res;
     }
 
-    private int scoreK2(int[][] board) {
+    public int scoreK2(int[][] board) {
         int psgAdder;
         double psgDivider;
 
@@ -125,7 +125,7 @@ public class Difficulty {
         return count;
     }
 
-    private double scoreK3(int[][] board) {
+    public double scoreK3(int[][] board) {
         double res;
         double cntSudut = 0;
         double cntTotal = 0;
@@ -151,7 +151,7 @@ public class Difficulty {
         return res;
     }
 
-    private int scoreK4(int[][] board) {
+    public int scoreK4(int[][] board) {
         int psgAdder;
         double psgDivider;
 
