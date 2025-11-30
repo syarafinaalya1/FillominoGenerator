@@ -1,11 +1,18 @@
+import java.util.Arrays;
 
 public class Difficulty {
     int[][] board;
     int size;
 
-    public Difficulty(int[][] board, int size) {
-        this.size = size;
-        this.board = new int[this.size][this.size];
+    public Difficulty(int[][] board) {
+        this.size = board.length;
+
+        this.board = new int[size][size];
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                this.board[i][j] = board[i][j];
+            }
+        }
     }
 
     public double getScore() {
@@ -52,6 +59,9 @@ public class Difficulty {
                 }
             }
         }
+        if (potentialCnt == 0)
+            return 0;
+
         res = invalidCnt / potentialCnt;
         return res;
     }
@@ -126,29 +136,27 @@ public class Difficulty {
     }
 
     public double scoreK3(int[][] board) {
-        double res;
         double cntSudut = 0;
         double cntTotal = 0;
 
-        // hitumg presentase clue dekat sudut/ total clue
-        for (int i = 0; i < board.length; i++) {
-            for (int j = 0; j < board.length; j++) {
-                if (i != 0 || i != board.length) {
-                    if (j == 0 || j == board.length) {
-                        if (board[i][j] != 0) {
-                            cntSudut++;
-                        }
-                    }
-                } else {
-                    if (board[i][j] != 0) {
+        int n = board.length;
+
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                if (board[i][j] != 0) {
+                    cntTotal++;
+                    // dekat sudut = baris pertama/terakhir ATAU kolom pertama/terakhir
+                    if (i == 0 || i == n - 1 || j == 0 || j == n - 1) {
                         cntSudut++;
                     }
                 }
             }
         }
-        res = cntSudut / cntTotal;
 
-        return res;
+        if (cntTotal == 0)
+            return 0; // hindari div 0
+
+        return cntSudut / cntTotal;
     }
 
     public int scoreK4(int[][] board) {
@@ -188,12 +196,7 @@ public class Difficulty {
                     j = akhirCol;
                 }
             }
-
-            System.out.println();
         }
-
-        System.out.println("Jumlah center : " + count);
-
         return count;
     }
 

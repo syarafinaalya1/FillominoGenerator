@@ -46,8 +46,6 @@ public class Board {
                 // CASE 1 : jika tidak punya tetangga
                 if (countNB(cell, board) == 0) {
 
-                    System.out.println("0 tetangga");
-
                     cell.value = 1;
                     board[cell.row][cell.col] = cell.value;
 
@@ -55,12 +53,11 @@ public class Board {
                     newGroup.add(new Pair(cell.row, cell.col, cell.value));
                     groups.add(newGroup);
 
-                    printBoard(board);
                 }
 
                 // CASE 2 : 1 tetangga
                 else if (countNB(cell, board) == 1) {
-                    System.out.println("1 tetangga");
+
                     cell.value = 1;
                     NB = null;
 
@@ -84,7 +81,6 @@ public class Board {
                         notChecked = removeFromNotChecked(cell, groups, notChecked);
                         board = updateBoard(groups, NB);
 
-                        printBoard(board);
                     } else {
                         // buat grup baru berisi 1
                         board[cell.row][cell.col] = 1;
@@ -92,11 +88,9 @@ public class Board {
                         newGroup.add(new Pair(cell.row, cell.col, 1));
                         groups.add(newGroup);
 
-                        printBoard(board);
                     }
                 } else if (countNB(cell, board) > 1) {
 
-                    System.out.println("Multi Tetangga : " + cell.col + " " + cell.row);
                     int arah = rd.nextInt(4);
                     boolean direction = true;
                     checkedNB = initiateCheckedNB(cell, checkedNB);
@@ -207,7 +201,7 @@ public class Board {
                                             }
 
                                             direction = false;
-                                            printBoard(board);
+
                                         }
 
                                         else {
@@ -226,7 +220,7 @@ public class Board {
                                     cell.value = board[cell.row][cell.col];
 
                                     direction = false;
-                                    printBoard(board);
+
                                 }
 
                             }
@@ -259,7 +253,7 @@ public class Board {
                                     }
 
                                     direction = false;
-                                    printBoard(board);
+
                                 }
 
                                 else {
@@ -307,7 +301,7 @@ public class Board {
                                 }
 
                                 direction = false;
-                                printBoard(board);
+
                             }
 
                             else {
@@ -336,6 +330,7 @@ public class Board {
                     Pair tmp = new Pair(rr, cc, 0);
                     boolean[] TcheckedNB = new boolean[4];
                     TcheckedNB = initiateCheckedNB(tmp, TcheckedNB);
+
                     if (board[rr][cc] == 1) {
                         // cek kanan
                         if (cc + 1 < size && board[rr][cc + 1] == 1) {
@@ -520,17 +515,6 @@ public class Board {
         return updatedIdx;
     }
 
-    private void printBoard(int[][] board) {
-        System.out.println();
-        for (int i = 0; i < board.length; i++) {
-            for (int j = 0; j < board.length; j++) {
-                System.out.print(board[i][j] + " ");
-            }
-            System.out.println();
-        }
-        System.out.println();
-    }
-
     private int[][] updateBoard(List<ArrayList<Pair>> groups, Pair NB) {
         // cari index group tetangga (nb) setelah merge untuk sinkronisasi board
         int updatedIdx = getGroupIdx(NB, groups);
@@ -581,7 +565,7 @@ public class Board {
 
     }
 
-    private Pair mapDirection(int index, Pair cell) { // index: 0=up,1=left,2=right,3=down
+    private Pair mapDirection(int index, Pair cell) {
         int r = cell.row;
         int c = cell.col;
 
@@ -595,6 +579,11 @@ public class Board {
             r = r + 1; // down
         else
             return new Pair(-1, -1, 0);
+
+        // INBOUND CHECK (WAJIB)
+        if (r < 0 || c < 0 || r >= size || c >= size) {
+            return new Pair(-1, -1, 0);
+        }
 
         return new Pair(r, c, board[r][c]);
     }
@@ -704,8 +693,13 @@ public class Board {
         for (int i = 0; i < groups.size(); i++) {
             List<Pair> group = groups.get(i);
             Collections.shuffle(group);
+            int sisa;
 
-            int sisa = random.nextBoolean() ? 1 : 2;
+            if (group.size() > 2) {
+                sisa = random.nextBoolean() ? 1 : 2;
+            } else {
+                sisa = 1;
+            }
 
             while (group.size() > sisa) {
                 group.remove(group.size() - 1);
