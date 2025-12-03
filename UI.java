@@ -3,56 +3,60 @@ import java.awt.*;
 
 public class UI extends JFrame {
 
-    private JPanel panelGrid; // panel untuk menampilkan grid papan
-    private JLabel labelScore; // label untuk menampilkan score
+    private JPanel panelGrid; // panel u/ grif
+    private JLabel labelScore; // label u/score
     private JComboBox<String> pilihan1Box;
 
     public UI() {
-        setTitle("Contoh UI Dua Kolom (Papan di Kiri)");
+        setTitle("Generator Fillomino");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(900, 600);
         setLayout(new GridLayout(1, 2));
 
-        // ===================== KOLOM KIRI =====================
+        // 1/2
+
         JPanel panelKiri = new JPanel(new BorderLayout());
         panelKiri.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         JLabel labelPapan = new JLabel("Papan Array 2D", SwingConstants.CENTER);
         labelPapan.setFont(new Font("Arial", Font.BOLD, 18));
 
-        // panel grid awal (dummy 5x5)
+        // grid awal
         panelGrid = new JPanel();
         panelGrid.setLayout(new GridLayout(5, 5, 5, 5));
-        generateDummyGrid(5);
+        generateDummyGrid(5); // u/ awalan
 
         panelKiri.add(labelPapan, BorderLayout.NORTH);
         panelKiri.add(panelGrid, BorderLayout.CENTER);
 
-        // ===================== KOLOM KANAN =====================
+        // 2/2
+
         JPanel panelKanan = new JPanel();
         panelKanan.setLayout(new BoxLayout(panelKanan, BoxLayout.Y_AXIS));
         panelKanan.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        // Dropdown hanya untuk ukuran
+        // Dropdown ukuran
         JPanel panelDropdown = new JPanel(new GridLayout(1, 2, 10, 10));
         panelDropdown.add(new JLabel("Ukuran Board:"));
 
         pilihan1Box = new JComboBox<>(new String[] {
-                "4", "6", "8", "10", "12", "14", "16", "18", "20", "22"
+                "4 x 4 ", "6 x 6", "8 x 8", "10 x 10", "12 x 12", "14 x 14", "16 x 16", "18 x 18", "20 x 20", "22 x 22"
         });
         panelDropdown.add(pilihan1Box);
 
-        // Tombol Generate Board
+        // Btn Generate Board
         JButton btnGenerate = new JButton("Generate New Board");
         btnGenerate.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         btnGenerate.addActionListener(e -> {
-            int size = Integer.parseInt((String) pilihan1Box.getSelectedItem());
+            String selected = (String) pilihan1Box.getSelectedItem();
+            int size = Integer.parseInt(selected.split("x")[0].trim());
+
             generateBoard(size);
         });
 
         // Panel Difficulty
-        JPanel panelDifficulty = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        JPanel panelDifficulty = new JPanel(new FlowLayout(FlowLayout.LEFT));
         panelDifficulty.add(new JLabel("Difficulty : "));
         labelScore = new JLabel("0");
         labelScore.setFont(new Font("Arial", Font.BOLD, 14));
@@ -72,13 +76,11 @@ public class UI extends JFrame {
         setVisible(true);
     }
 
-    // ===================== GENERATE BOARD =====================
-
+    // Logic u/ main
     private void generateBoard(int size) {
 
         int[][] papan = new int[size][size];
 
-        // LOGIKA EXACT seperti Main.java Anda
         Board b = new Board(size);
 
         papan = b.generateBoard();
@@ -86,20 +88,15 @@ public class UI extends JFrame {
 
         papan = b.pruneBoard(papan);
         Difficulty d = new Difficulty(papan);
-        System.out.println(d.scoreK1(papan));
-        System.out.println(d.scoreK2(papan));
-        System.out.println(d.scoreK3(papan));
-        System.out.println(d.scoreK4(papan));
-        System.out.println(d.scoreK1(d.board));
-        System.out.println(d.scoreK2(d.board));
-        System.out.println(d.scoreK3(d.board));
-        System.out.println(d.scoreK4(d.board));
+        System.out.println("k1:" + d.scoreK1(d.board));
+        System.out.println("k2:" + d.scoreK2(d.board));
+        System.out.println("k3:" + d.scoreK3(d.board));
+        System.out.println("k4:" + d.scoreK4(d.board));
         double score = d.getScore();
         System.out.println(score);
-        // TAMPILKAN BOARD KE UI
-        updateGrid(papan);
 
-        // UPDATE SCORE
+        // UI update
+        updateGrid(papan);
         labelScore.setText(String.valueOf(score));
     }
 
@@ -111,8 +108,6 @@ public class UI extends JFrame {
             System.out.println();
         }
     }
-
-    // ===================== DRAW GRID =====================
 
     private void generateDummyGrid(int size) {
         panelGrid.removeAll();

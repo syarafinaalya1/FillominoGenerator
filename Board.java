@@ -1,7 +1,6 @@
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Scanner;
 import java.util.Random;
 
 public class Board {
@@ -681,39 +680,32 @@ public class Board {
     public int[][] pruneBoard(int[][] board) {
         Random random = new Random();
 
-        // inisiasi board kosong
+        // kosongkan papan
         for (int i = 0; i < board.length; i++) {
             for (int j = 0; j < board[i].length; j++) {
                 board[i][j] = 0;
             }
         }
 
+        // acak urutan groups
         Collections.shuffle(groups);
 
-        for (int i = 0; i < groups.size(); i++) {
-            List<Pair> group = groups.get(i);
-            Collections.shuffle(group);
-            int sisa;
+        for (List<Pair> group : groups) {
 
+            int sisa;
             if (group.size() > 2) {
                 sisa = random.nextBoolean() ? 1 : 2;
             } else {
                 sisa = 1;
             }
 
-            while (group.size() > sisa) {
-                group.remove(group.size() - 1);
-            }
-        }
-
-        for (int i = 0; i < groups.size(); i++) {
-            List<Pair> group = groups.get(i);
-            for (int j = 0; j < group.size(); j++) {
-                Pair cell = group.get(j);
+            // pilih elemen secara acak TANPA menghapus dari group
+            for (int k = 0; k < sisa; k++) {
+                Pair cell = group.get(random.nextInt(group.size()));
                 board[cell.row][cell.col] = cell.value;
             }
         }
+
         return board;
     }
-
 }
